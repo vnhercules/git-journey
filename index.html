@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Git Journey 🚀</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Courier New', monospace;
+      background: #0d1117;
+      color: #e6edf3;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2rem;
+      margin-bottom: 4px;
+      background: linear-gradient(90deg, #58a6ff, #bc8cff, #ff7b72);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #8b949e;
+      margin-bottom: 32px;
+      font-size: 0.9rem;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 700px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+
+    .panel {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .panel h2 {
+      font-size: 1rem;
+      color: #58a6ff;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* ---- Branch Switcher ---- */
+    .branches {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .branch-btn {
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+    }
+
+    .branch-btn.active {
+      border-color: currentColor;
+      font-weight: bold;
+    }
+
+    .branch-main    { background: #1f3d2e; color: #3fb950; }
+    .branch-feature { background: #2d2b55; color: #bc8cff; }
+    .branch-hotfix  { background: #3d1f1f; color: #ff7b72; }
+
+    .current-branch {
+      font-size: 0.85rem;
+      color: #8b949e;
+      margin-bottom: 12px;
+    }
+    .current-branch span { color: #e6edf3; font-weight: bold; }
+
+    /* ---- Commit Input ---- */
+    .commit-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .commit-row input {
+      flex: 1;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #e6edf3;
+      font-family: inherit;
+      font-size: 0.9rem;
+      padding: 8px 12px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .commit-row input:focus { border-color: #58a6ff; }
+
+    button {
+      background: #238636;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.85rem;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+
+    button:hover { background: #2ea043; }
+
+    .btn-merge  { background: #6e40c9; }
+    .btn-merge:hover { background: #8957e5; }
+    .btn-danger { background: #b62324; }
+    .btn-danger:hover { background: #da3633; }
+
+    /* ---- Commit Graph ---- */
+    #graph-canvas {
+      width: 100%;
+      height: 300px;
+      display: block;
+      border-radius: 8px;
+      background: #0d1117;
+      border: 1px solid #21262d;
+    }
+
+    /* ---- Log ---- */
+    .log {
+      height: 220px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 6px;
+      padding: 4px;
+    }
+
+    .log-entry {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid #21262d;
+      background: #0d1117;
+      animation: fadein 0.3s ease;
+    }
+
+    @keyframes fadein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; } }
+
+    .log-hash { color: #f78166; font-size: 0.75rem; min-width: 52px; }
+    .log-branch-tag {
+      font-size: 0.7rem;
+      padding: 1px 7px;
+      border-radius: 10px;
+      white-space: nowrap;
+    }
+    .log-msg { font-size: 0.85rem; color: #c9d1d9; word-break: break-word; }
+
+    /* ---- Merge area ---- */
+    .merge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    /* ---- Cheat Sheet ---- */
+    .cheat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .cmd-card {
+      background: #0d1117;
+      border: 1px solid #21262d;
+      border-radius: 8px;
+      padding: 10px 12px;
+      cursor: pointer;
+      transition: border-color 0.2s, transform 0.1s;
+    }
+
+    .cmd-card:hover { border-color: #58a6ff; transform: translateY(-1px); }
+    .cmd-card:active { transform: scale(0.97); }
+
+    .cmd-card code {
+      display: block;
+      color: #79c0ff;
+      font-size: 0.8rem;
+      margin-bottom: 4px;
+    }
+
+    .cmd-card p {
+      color: #8b949e;
+      font-size: 0.75rem;
+      line-height: 1.4;
+    }
+
+    /* ---- Terminal output ---- */
+    #terminal {
+      background: #010409;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 0.82rem;
+      height: 100px;
+      overflow-y: auto;
+      color: #56d364;
+      white-space: pre-wrap;
+      display: flex;
+      flex-direction: column-reverse;
+    }
+
+    .term-line { margin-bottom: 2px; }
+    .term-prompt { color: #bc8cff; }
+    .term-output { color: #56d364; }
+    .term-error  { color: #ff7b72; }
+
+    .full-width { grid-column: 1 / -1; }
+
+    .tip {
+      text-align: center;
+      color: #8b949e;
+      font-size: 0.75rem;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Git Journey 🚀</h1>
+<p class="subtitle">Your interactive playground for learning Git — make commits, switch branches, merge!</p>
+
+<div class="layout">
+
+  <!-- Panel: Commit Sandbox -->
+  <div class="panel">
+    <h2>🌿 Branch Sandbox</h2>
+
+    <div class="current-branch">Current branch: <span id="current-branch-label">main</span></div>
+
+    <div class="branches">
+      <button class="branch-btn branch-main active" onclick="switchBranch('main', this)">🟢 main</button>
+      <button class="branch-btn branch-feature" onclick="switchBranch('feature', this)">🟣 feature</button>
+      <button class="branch-btn branch-hotfix" onclick="switchBranch('hotfix', this)">🔴 hotfix</button>
+    </div>
+
+    <div class="commit-row">
+      <input id="commit-msg" type="text" placeholder="Type a commit message..." maxlength="60" />
+      <button onclick="makeCommit()">Commit ✅</button>
+    </div>
+
+    <div class="merge-row">
+      <button class="btn-merge" onclick="mergeBranch('feature')">Merge feature → main 🔀</button>
+      <button class="btn-merge" onclick="mergeBranch('hotfix')">Merge hotfix → main 🔧</button>
+      <button class="btn-danger" onclick="resetAll()">Reset All 💣</button>
+    </div>
+  </div>
+
+  <!-- Panel: Commit Log -->
+  <div class="panel">
+    <h2>📜 Commit Log  <span style="color:#8b949e;font-size:0.8rem;font-weight:normal;">(newest at bottom)</span></h2>
+    <div class="log" id="commit-log"></div>
+  </div>
+
+  <!-- Panel: Graph (full width) -->
+  <div class="panel full-width">
+    <h2>📊 Commit Graph</h2>
+    <canvas id="graph-canvas"></canvas>
+  </div>
+
+  <!-- Panel: Terminal Output -->
+  <div class="panel">
+    <h2>💻 Simulated Terminal</h2>
+    <div id="terminal"></div>
+  </div>
+
+  <!-- Panel: Cheat Sheet -->
+  <div class="panel">
+    <h2>📋 Git Cheat Sheet  <span style="color:#8b949e;font-size:0.75rem;font-weight:normal;">click to "run"</span></h2>
+    <div class="cheat-grid">
+      <div class="cmd-card" onclick="termRun('git status', 'On branch ' + currentBranch + '\\nnothing to commit, working tree clean')">
+        <code>git status</code>
+        <p>Show the state of your working directory</p>
+      </div>
+      <div class="cmd-card" onclick="termRun('git log --oneline', getLogOneline())">
+        <code>git log --oneline</code>
+        <p>Short one-line history of commits</p>
+      </div>
+      <div class="cmd-card" onclick="termRun('git branch', getBranchList())">
+        <code>git branch</code>
+        <p>List all local branches</p>
+      </div>
+      <div class="cmd-card" onclick="termRun('git diff', 'diff --git a/index.html b/index.html\\n+++ your awesome changes here')">
+        <code>git diff</code>
+        <p>Show unstaged changes in your files</p>
+      </div>
+      <div class="cmd-card" onclick="termRun('git stash', 'Saved working directory state WIP on ' + currentBranch)">
+        <code>git stash</code>
+        <p>Temporarily shelve changes so you can switch context</p>
+      </div>
+      <div class="cmd-card" onclick="termRun('git checkout -b new-branch', 'Switched to a new branch \\'new-branch\\'')">
+        <code>git checkout -b</code>
+        <p>Create and switch to a new branch</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p class="tip">💡 Try committing a few times on different branches, then merge them into main!</p>
+
+<script>
+  // ── State ──────────────────────────────────────────────────────────────────
+  const BRANCH_COLORS = {
+    main:    '#3fb950',
+    feature: '#bc8cff',
+    hotfix:  '#ff7b72',
+  };
+
+  let currentBranch = 'main';
+  let commitCounter = 0;
+
+  // commits[]: { id, hash, msg, branch, parent (hash|null), isMerge }
+  let commits = [];
+
+  // branchHead[branch] = hash of latest commit on that branch
+  let branchHead = { main: null, feature: null, hotfix: null };
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  function randHash() {
+    return Math.random().toString(16).slice(2, 9);
+  }
+
+  function now() {
+    return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  // ── Core Actions ───────────────────────────────────────────────────────────
+  function makeCommit() {
+    const input = document.getElementById('commit-msg');
+    const msg = input.value.trim() || `Update file #${++commitCounter}`;
+    input.value = '';
+
+    const hash = randHash();
+    const parent = branchHead[currentBranch];
+    commits.push({ hash, msg, branch: currentBranch, parent, isMerge: false });
+    branchHead[currentBranch] = hash;
+
+    addLogEntry(hash, currentBranch, msg);
+    termLine(`$ git commit -m "${msg}"`, 'prompt');
+    termLine(`[${currentBranch} ${hash}] ${msg}`, 'output');
+    drawGraph();
+  }
+
+  function switchBranch(branch, btn) {
+    currentBranch = branch;
+    document.getElementById('current-branch-label').textContent = branch;
+    document.querySelectorAll('.branch-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    termLine(`$ git checkout ${branch}`, 'prompt');
+    termLine(`Switched to branch '${branch}'`, 'output');
+  }
+
+  function mergeBranch(source) {
+    if (source === currentBranch) {
+      termLine(`$ git merge ${source}`, 'prompt');
+      termLine(`Already on '${source}' — can't merge into itself`, 'error');
+      return;
+    }
+    if (!branchHead[source]) {
+      termLine(`$ git merge ${source}`, 'prompt');
+      termLine(`Branch '${source}' has no commits to merge`, 'error');
+      return;
+    }
+    if (branchHead[source] === branchHead[currentBranch]) {
+      termLine(`$ git merge ${source}`, 'prompt');
+      termLine(`Already up to date.`, 'output');
+      return;
+    }
+
+    const hash = randHash();
+    const msg = `Merge branch '${source}' into ${currentBranch}`;
+    commits.push({ hash, msg, branch: currentBranch, parent: branchHead[currentBranch], mergeParent: branchHead[source], isMerge: true });
+    branchHead[currentBranch] = hash;
+
+    addLogEntry(hash, currentBranch, msg, true);
+    termLine(`$ git merge ${source}`, 'prompt');
+    termLine(`Merge made by the 'ort' strategy.\n  ${hash} ${msg}`, 'output');
+    drawGraph();
+  }
+
+  function resetAll() {
+    commits = [];
+    branchHead = { main: null, feature: null, hotfix: null };
+    commitCounter = 0;
+    document.getElementById('commit-log').innerHTML = '';
+    termLine('$ git reset --hard && git branch -D feature hotfix', 'prompt');
+    termLine('HEAD is now at (empty)\nBranches deleted. Fresh start! 🌱', 'output');
+    drawGraph();
+  }
+
+  // ── Log ────────────────────────────────────────────────────────────────────
+  function addLogEntry(hash, branch, msg, isMerge = false) {
+    const log = document.getElementById('commit-log');
+    const el = document.createElement('div');
+    el.className = 'log-entry';
+    const color = BRANCH_COLORS[branch];
+    el.innerHTML = `
+      <span class="log-hash">${hash}</span>
+      <span class="log-branch-tag" style="background:${color}22;color:${color};border:1px solid ${color}66">${branch}</span>
+      ${isMerge ? '<span style="font-size:0.8rem">🔀</span>' : ''}
+      <span class="log-msg">${escHtml(msg)}</span>
+    `;
+    log.prepend(el);
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  // ── Terminal ───────────────────────────────────────────────────────────────
+  function termLine(text, type = 'output') {
+    const term = document.getElementById('terminal');
+    const line = document.createElement('div');
+    line.className = `term-line term-${type}`;
+    line.textContent = text;
+    term.prepend(line);
+  }
+
+  function termRun(cmd, output) {
+    termLine(`$ ${cmd}`, 'prompt');
+    termLine(output, 'output');
+  }
+
+  // Cheat-sheet helpers
+  function getLogOneline() {
+    if (!commits.length) return '(no commits yet)';
+    return commits.slice(-6).reverse().map(c => `${c.hash} ${c.msg}`).join('\n');
+  }
+
+  function getBranchList() {
+    const lines = ['  main', '  feature', '  hotfix'];
+    const idx = lines.findIndex(l => l.trim() === currentBranch);
+    if (idx >= 0) lines[idx] = '* ' + lines[idx].trim();
+    return lines.join('\n');
+  }
+
+  // ── Graph ──────────────────────────────────────────────────────────────────
+  function drawGraph() {
+    const canvas = document.getElementById('graph-canvas');
+    const dpr = window.devicePixelRatio || 1;
+    const W = canvas.clientWidth;
+    const H = canvas.clientHeight;
+    canvas.width  = W * dpr;
+    canvas.height = H * dpr;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    ctx.clearRect(0, 0, W, H);
+
+    if (!commits.length) {
+      ctx.fillStyle = '#8b949e';
+      ctx.font = '14px Courier New';
+      ctx.textAlign = 'center';
+      ctx.fillText('No commits yet — make one! 👆', W / 2, H / 2);
+      return;
+    }
+
+    const BRANCH_ORDER = ['main', 'feature', 'hotfix'];
+    const LANE_X = { main: 60, feature: 160, hotfix: 260 };
+    const R = 10;
+    const posMap = {}; // hash → {x, y}
+
+    const totalCommits = commits.length;
+    const stepY = Math.min(50, (H - 60) / Math.max(totalCommits, 1));
+    const startY = 30;
+
+    // position each commit
+    commits.forEach((c, i) => {
+      const x = LANE_X[c.branch] || 60;
+      const y = startY + i * stepY;
+      posMap[c.hash] = { x, y };
+    });
+
+    // draw lane guide lines
+    BRANCH_ORDER.forEach(b => {
+      const x = LANE_X[b];
+      ctx.strokeStyle = BRANCH_COLORS[b] + '22';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 6]);
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, H);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    });
+
+    // draw branch labels at top
+    BRANCH_ORDER.forEach(b => {
+      const x = LANE_X[b];
+      ctx.fillStyle = BRANCH_COLORS[b];
+      ctx.font = 'bold 11px Courier New';
+      ctx.textAlign = 'center';
+      ctx.fillText(b, x, 14);
+    });
+
+    // draw edges
+    commits.forEach(c => {
+      const to = posMap[c.hash];
+      if (!to) return;
+
+      // regular parent
+      if (c.parent && posMap[c.parent]) {
+        const from = posMap[c.parent];
+        ctx.strokeStyle = BRANCH_COLORS[c.branch] + 'aa';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        if (from.x === to.x) {
+          ctx.moveTo(from.x, from.y);
+          ctx.lineTo(to.x, to.y);
+        } else {
+          ctx.moveTo(from.x, from.y);
+          ctx.bezierCurveTo(from.x, (from.y + to.y) / 2, to.x, (from.y + to.y) / 2, to.x, to.y);
+        }
+        ctx.stroke();
+      }
+
+      // merge parent
+      if (c.mergeParent && posMap[c.mergeParent]) {
+        const from = posMap[c.mergeParent];
+        ctx.strokeStyle = BRANCH_COLORS[c.branch] + '88';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([5, 4]);
+        ctx.beginPath();
+        ctx.moveTo(from.x, from.y);
+        ctx.bezierCurveTo(from.x, (from.y + to.y) / 2, to.x, (from.y + to.y) / 2, to.x, to.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    });
+
+    // draw commit nodes
+    commits.forEach(c => {
+      const { x, y } = posMap[c.hash];
+      const color = BRANCH_COLORS[c.branch];
+
+      ctx.beginPath();
+      ctx.arc(x, y, R, 0, Math.PI * 2);
+      ctx.fillStyle = c.isMerge ? '#161b22' : color + 'cc';
+      ctx.fill();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = c.isMerge ? 2.5 : 1.5;
+      ctx.stroke();
+
+      if (c.isMerge) {
+        ctx.fillStyle = color;
+        ctx.font = 'bold 11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('M', x, y);
+        ctx.textBaseline = 'alphabetic';
+      }
+
+      // label
+      ctx.fillStyle = '#c9d1d9';
+      ctx.font = '11px Courier New';
+      ctx.textAlign = 'left';
+      const shortMsg = c.msg.length > 28 ? c.msg.slice(0, 28) + '…' : c.msg;
+      ctx.fillText(`${c.hash}  ${shortMsg}`, x + R + 6, y + 4);
+    });
+
+    // HEAD label
+    const headBranch = currentBranch;
+    const headHash = branchHead[headBranch];
+    if (headHash && posMap[headHash]) {
+      const { x, y } = posMap[headHash];
+      ctx.fillStyle = '#f0f6fc';
+      ctx.font = 'bold 10px Courier New';
+      ctx.textAlign = 'center';
+      ctx.fillText('HEAD', x, y - R - 4);
+    }
+  }
+
+  // ── Init ───────────────────────────────────────────────────────────────────
+  window.addEventListener('resize', drawGraph);
+  document.getElementById('commit-msg').addEventListener('keydown', e => {
+    if (e.key === 'Enter') makeCommit();
+  });
+
+  termLine("Welcome to Git Journey! 🚀 Make your first commit above.", 'output');
+  termLine("$ git init", 'prompt');
+  drawGraph();
+</script>
+</body>
+</html>
